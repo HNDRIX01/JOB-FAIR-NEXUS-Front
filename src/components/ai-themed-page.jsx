@@ -7,46 +7,57 @@ import { Label } from "@/components/ui/label"
 
 export default function AIThemedPage() {
   const handleSubmit = async (e) => {
-    e.preventDefault(); // Prevent the default form submission behavior
-  
-    // Collect form data
+    e.preventDefault();
+    
     const formData = new FormData(e.target);
-    const data = Object.fromEntries(formData); // Convert formData into a plain object
-  
+    const data = Object.fromEntries(formData);
+    
     try {
-      // Send the data to the Django backend
-      const response = await fetch("http://127.0.0.1:8000/api/insights/", {
-        method: "POST", // Make a POST request
+      // Step 1: Save the user profile data
+      const saveResponse = await fetch(`${process.env.NEXT_PUBLIC_BACK_URL}/api/user-profile/`, {
+        method: "POST",
         headers: {
-          "Content-Type": "application/json", // Specify that we're sending JSON
+          "Content-Type": "application/json",
         },
-        body: JSON.stringify(data), // Convert the data to a JSON string
+        body: JSON.stringify(data),
       });
-  
-      // Check if the request was successful
-      if (response.ok) {
-        const result = await response.json();
+
+      if (!saveResponse.ok) {
+        throw new Error(`Error saving user profile! status: ${saveResponse.status}`);
+      }
+
+      // Step 2: Fetch AI insights after saving the profile
+      const insightsResponse = await fetch(`${process.env.NEXT_PUBLIC_BACK_URL}/api/insights/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+      });
+
+      if (insightsResponse.ok) {
+        const result = await insightsResponse.json();
         const resultElement = document.getElementById("result");
         
-        // Format the received job titles for display
-        const formattedResult = `
-          <h2 class="text-2xl font-bold mb-4">AI-Generated Job Insights</h2>
-          <p class="text-lg">Based on your inputs, here are some suggested job titles for you:</p>
-          <ul class="list-disc list-inside mt-2 space-y-1">
-            ${result.job_titles.map(job => `<li>${job}</li>`).join('')}
-          </ul>
+        // Display formatted AI-generated job insights
+        const formattedResult = ` 
+          <h2 class="text-2xl font-bold mb-4 font-sans">AI-Generated Job Insights</h2>
+          <p class="text-lg font-sans mb-4">Based on your inputs, here are some suggested job titles for you:</p>
+          <div class="space-y-2">
+            ${result.job_titles.map(job => `<p class="text-lg font-bold font-sans">${job}</p>`).join('')}
+          </div>
         `;
         
         resultElement.innerHTML = formattedResult;
+        form.reset();
       } else {
-        console.error(`HTTP error! status: ${response.status}`);  // Log any HTTP error status
-        throw new Error(`HTTP error! status: ${response.status}`);
+        throw new Error(`Error fetching insights! status: ${insightsResponse.status}`);
       }
+
     } catch (error) {
-      // Handle any errors that occurred during the fetch
-      console.error("Error submitting form:", error, error?.message, error?.stack);
+      console.error("Error during submission:", error);
       const resultElement = document.getElementById("result");
-      resultElement.textContent = "Failed to fetch AI insights. Please try again.";
+      resultElement.textContent = "Failed to process your request. Please try again.";
     }
   };
   

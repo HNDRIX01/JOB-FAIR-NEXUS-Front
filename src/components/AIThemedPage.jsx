@@ -53,9 +53,22 @@ export default function AIThemedPage() {
     const form = e.target;
     const formData = new FormData(form);
     const data = Object.fromEntries(formData);
+
+      // Step 1: Save the user profile data
+      const saveResponse = await fetch(`${process.env.NEXT_PUBLIC_BACK_URL}/api/user-profile/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+      });
+
+      if (!saveResponse.ok) {
+        throw new Error(`Error saving user profile! status: ${saveResponse.status}`);
+      }
   
     try {
-      const response = await fetch("http://127.0.0.1:8000/api/insights/", {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACK_URL}/api/insights/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

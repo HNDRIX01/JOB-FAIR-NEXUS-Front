@@ -18,6 +18,19 @@ export default function AIThemedPage() {
     
     const formData = new FormData(e.target);
     const data = Object.fromEntries(formData);
+
+    const saveResponse = await fetch(`${process.env.BACK_URL}/api/user-profile/`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(data),
+    });
+
+    if (!saveResponse.ok) {
+      throw new Error(`Error saving user profile! status: ${saveResponse.status}`);
+    }
+
     
     try {
       const response = await fetch("http://127.0.0.1:8000/api/insights/", {
